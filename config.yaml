@@ -1,0 +1,57 @@
+# Project Configuration File
+# INSY 669 - Consumer Complaint Text Analytics
+
+# Data Paths
+data:
+  raw_data_path: "data/raw/consumer_complaints.csv"
+  interim_data_path: "data/interim/"
+  processed_data_path: "data/processed/"
+  
+# Text Processing Parameters
+text_processing:
+  # Content Analysis
+  min_word_length: 3
+  max_word_length: 20
+  ngram_range: [1, 3]  # unigrams, bigrams, trigrams
+  
+  # TF-IDF Parameters
+  tfidf:
+    max_features: 1000
+    min_df: 5  # minimum document frequency
+    max_df: 0.8  # maximum document frequency (ignore too common words)
+    
+  # Stopwords
+  remove_stopwords: true
+  custom_stopwords: ["xx", "xxxx", "xxxxxxxx"]  # masked data patterns
+  
+# Signal Analysis Parameters
+signal_analysis:
+  # Emphasis Detection
+  caps_threshold: 3  # minimum consecutive caps words
+  exclamation_threshold: 2
+  question_threshold: 3
+  
+  # Pattern Detection
+  repeated_punctuation: true
+  phone_pattern: true
+  email_pattern: true
+  
+# Model Parameters
+models:
+  random_state: 42
+  test_size: 0.2
+  
+# Output Parameters
+outputs:
+  figures_path: "outputs/figures/"
+  tables_path: "outputs/tables/"
+  reports_path: "outputs/reports/"
+  
+  # Figure settings
+  figure_dpi: 300
+  figure_format: "png"
+  
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
