@@ -1,7 +1,9 @@
 # Consumer Complaint Text Analytics Project
+
 ## INSY 669 - Text Analytics
 
 **Team Members:**
+
 - Yanxin Li (261010919)
 - Yasmine Zhao (261268871)
 - Ellie Ha (261266871)
@@ -16,6 +18,7 @@
 This project applies text analytics techniques to analyze consumer complaints from the Consumer Financial Protection Bureau (CFPB) database. The goal is to extract insights from unstructured complaint narratives and identify high-risk complaints requiring immediate attention.
 
 ### Objectives
+
 1. **Content Analysis**: Extract keywords and key phrases to understand what consumers complain about
 2. **Signal Analysis**: Identify urgency and escalation patterns to flag high-risk complaints
 3. **Pattern Discovery**: Reveal recurring themes through co-occurring terms
@@ -25,7 +28,7 @@ This project applies text analytics techniques to analyze consumer complaints fr
 ## Dataset
 
 - **Source**: Consumer Financial Protection Bureau (CFPB) Consumer Complaint Database
-- **Size**: ~24,000 consumer complaints
+- **Size**: 1058741 consumer complaints
 - **Key Fields**:
   - Consumer complaint narrative (free text)
   - Product category
@@ -79,12 +82,14 @@ text_analytics_project/
 ## Methodology
 
 ### 1. Content Perspective (What consumers complain about)
+
 - Light text cleaning (formatting, whitespace)
 - Tokenization (unigrams, bigrams, trigrams)
 - TF-IDF weighting for keyword extraction
 - Phrase extraction for meaningful expressions
 
 ### 2. Signal Perspective (How consumers complain)
+
 - Preserve stylistic elements (caps, punctuation)
 - Extract emphasis features:
   - ALL-CAPS words frequency
@@ -98,12 +103,14 @@ text_analytics_project/
 ## Getting Started
 
 ### Prerequisites
+
 ```bash
 python >= 3.8
 pip
 ```
 
 ### Installation
+
 ```bash
 # Clone or navigate to project directory
 cd text_analytics_project
@@ -113,6 +120,7 @@ pip install -r requirements.txt
 ```
 
 ### Usage
+
 1. Place raw data in `data/raw/`
 2. Run notebooks in sequence (01 → 05)
 3. Review outputs in `outputs/` directory
