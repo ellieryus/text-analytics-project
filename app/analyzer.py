@@ -71,31 +71,42 @@ class ComplaintAnalyzer:
     #     return blob.sentiment.polarity, blob.sentiment.subjectivity
     
     def get_sentiment(self, text):
-        """Hybrid sentiment analysis"""
+        """Hybrid sentiment analysis - VADER primary, TextBlob fallback"""
         if not text:
             return 0.0, 0.0
         
-        # Try VADER 
+        # Try VADER first (better for complaints)
         try:
             vader_scores = self.vader.polarity_scores(text)
             vader_compound = vader_scores['compound']
             
-            # Use VADER if it's confident (|score| > 0.2)
-            if abs(vader_compound) > 0.2:
-                subjectivity = abs(vader_compound)
+            # VADER confidence threshold: use if score is meaningful (|score| > 0.05)
+            # VADER range: -1 to +1, where -0.05 to +0.05 is neutral
+            if abs(vader_compound) > 0.05:
+                # Estimate subjectivity from VADER score extremity
+                # More extreme = more subjective/opinionated
+                subjectivity = min(abs(vader_compound) + 0.3, 1.0)
                 return vader_compound, subjectivity
-        except:
+        except Exception as e:
+            # VADER not available or error - silently fall back
+            print(f"⚠️ VADER failed: {e}, using TextBlob")
             pass
         
         # Fallback to TextBlob
-        blob = TextBlob(text)
-        return blob.sentiment.polarity, blob.sentiment.subjectivity
-    
+        try:
+            blob = TextBlob(text)
+            return blob.sentiment.polarity, blob.sentiment.subjectivity
+        except Exception as e:
+            # Both failed - return neutral
+            print(f"⚠️ TextBlob also failed: {e}, returning neutral")
+            return 0.0, 0.5  # Neutral with moderate subjectivity
+
     def classify_sentiment(self, polarity):
-        # Classify sentiment
-        if polarity > 0.3:
+        """Classify sentiment from polarity score"""
+        # Use VADER thresholds (more sensitive than TextBlob)
+        if polarity > 0.05:  # VADER positive threshold
             return 'Positive'
-        elif polarity < -0.3:
+        elif polarity < -0.05:  # VADER negative threshold
             return 'Negative'
         else:
             return 'Neutral'

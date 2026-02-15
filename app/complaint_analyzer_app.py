@@ -1,9 +1,6 @@
 # app/complaint_analyzer_app.py
-"""
-Consumer Complaint Analyzer - Streamlit App
-Real-time complaint analysis with automatic risk flagging
-"""
 
+import os
 import streamlit as st
 import pandas as pd
 from analyzer import ComplaintAnalyzer
@@ -16,9 +13,16 @@ st.set_page_config(
     layout="wide"
 )
 
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(APP_DIR)
+DATA_DIR = os.path.join(PROJECT_ROOT, 'data')
+DB_PATH = os.path.join(DATA_DIR, 'complaints_database.db')
+
+os.makedirs(DATA_DIR, exist_ok=True)
+
 # Initialize
 analyzer = ComplaintAnalyzer()
-db = ComplaintDatabase()
+db = ComplaintDatabase(db_path=DB_PATH)
 
 # Title
 st.title("Consumer Complaint Risk Analyzer")
@@ -66,6 +70,12 @@ tab1, tab2 = st.tabs(["Analyze New Complaint", "View Database"])
 with tab1:
     st.header("Enter Complaint for Analysis")
     
+    # Initialize session state
+    if 'analysis_result' not in st.session_state:
+        st.session_state.analysis_result = None
+    if 'show_save_button' not in st.session_state:
+        st.session_state.show_save_button = False
+    
     # Input form
     with st.form("complaint_form"):
         # Complaint text
@@ -96,127 +106,153 @@ with tab1:
                 # Analyze
                 result = analyzer.analyze(complaint_text)
                 
-                # Display results
-                st.success("Analysis Complete!")
-                
-                # Risk Level Display
-                st.markdown("### Risk Assessment")
-                
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric(
-                        "Original Risk Level",
-                        f"{result['risk_level_original']}",
-                        f"Score: {result['emphasis_score']}"
-                    )
-                
-                with col2:
-                    st.metric(
-                        "Sentiment",
-                        result['sentiment_category'],
-                        f"{result['sentiment_polarity']:+.3f}"
-                    )
-                
-                with col3:
-                    st.metric(
-                        "Final Risk Level",
-                        f"{result['risk_level_final']}",
-                        f"Score: {result['sentiment_aware_score']}"
-                    )
-                
-                # Detailed Analysis
-                st.markdown("### Detailed Analysis")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("**Emphasis Features:**")
-                    features_df = pd.DataFrame({
-                        'Feature': [
-                            'ALL-CAPS Words',
-                            'Exclamation Marks',
-                            'Question Marks',
-                            'Repeated Punctuation',
-                            'Urgent Keywords'
-                        ],
-                        'Count': [
-                            result['features']['caps_words'],
-                            result['features']['exclamations'],
-                            result['features']['questions'],
-                            'Yes' if result['features']['repeated_punct'] else 'No',
-                            result['features']['urgent_keywords']
-                        ]
-                    })
-                    st.dataframe(features_df, use_container_width=True, hide_index=True)
-                
-                with col2:
-                    st.markdown("**Text Statistics:**")
-                    stats_df = pd.DataFrame({
-                        'Metric': [
-                            'Word Count',
-                            'Character Count',
-                            'Emphasis Score',
-                            'Sentiment Polarity',
-                            'Sentiment Subjectivity',
-                            'Final Score'
-                        ],
-                        'Value': [
-                            result['features']['word_count'],
-                            result['features']['char_count'],
-                            f"{result['emphasis_score']:.3f}",
-                            f"{result['sentiment_polarity']:.3f}",
-                            f"{result['sentiment_subjectivity']:.3f}",
-                            f"{result['sentiment_aware_score']:.3f}"
-                        ]
-                    })
-                    st.dataframe(stats_df, use_container_width=True, hide_index=True)
-                
-                # Action Recommendation
-                st.markdown("### Recommended Action")
-                
-                if result['risk_level_final'] == 'High':
-                    st.error("""
-                    URGENT - Immediate Action Required
-                    - Assign to priority queue
-                    - Response target: 24 hours
-                    - Escalate to management
-                    - Flag for legal review if needed
-                    """)
-                elif result['risk_level_final'] == 'Medium':
-                    st.warning("""
-                    Priority Handling
-                    - Assign to experienced agent
-                    - Response target: 48-72 hours
-                    - Monitor for escalation
-                    """)
-                else:
-                    st.info("""
-                    Standard Processing
-                    - Route to standard queue
-                    - Response target: 5-7 business days
-                    - Standard procedures apply
-                    """)
-                
-                # Save to database
-                st.markdown("---")
-                
-                col1, col2 = st.columns([3, 1])
-                
-                with col1:
-                    st.markdown("**Save this complaint to database?**")
-                
-                with col2:
-                    if st.button("Save to Database", use_container_width=True):
-                        metadata = {
-                            'product': product,
-                            'company': company,
-                            'notes': notes
-                        }
-                        
-                        complaint_id = db.save_complaint(result, metadata)
+                # Store in session state
+                st.session_state.analysis_result = result
+                st.session_state.metadata = {
+                    'product': product,
+                    'company': company,
+                    'notes': notes
+                }
+                st.session_state.show_save_button = True
+    
+    # Display results if available
+    if st.session_state.analysis_result is not None:
+        result = st.session_state.analysis_result
+        
+        st.success("Analysis Complete!")
+        
+        # Risk Level Display
+        st.markdown("### Risk Assessment")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "Original Risk Level",
+                f"{result['risk_level_original']}",
+                f"Score: {result['emphasis_score']}"
+            )
+        
+        with col2:
+            st.metric(
+                "Sentiment",
+                result['sentiment_category'],
+                f"{result['sentiment_polarity']:+.3f}"
+            )
+        
+        with col3:
+            st.metric(
+                "Final Risk Level",
+                f"{result['risk_level_final']}",
+                f"Score: {result['sentiment_aware_score']}"
+            )
+        
+        # Detailed Analysis
+        st.markdown("### Detailed Analysis")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Emphasis Features:**")
+            features_df = pd.DataFrame({
+                'Feature': [
+                    'ALL-CAPS Words',
+                    'Exclamation Marks',
+                    'Question Marks',
+                    'Repeated Punctuation',
+                    'Urgent Keywords'
+                ],
+                'Count': [
+                    result['features']['caps_words'],
+                    result['features']['exclamations'],
+                    result['features']['questions'],
+                    'Yes' if result['features']['repeated_punct'] else 'No',
+                    result['features']['urgent_keywords']
+                ]
+            })
+            st.dataframe(features_df, use_container_width=True, hide_index=True)
+        
+        with col2:
+            st.markdown("**Text Statistics:**")
+            stats_df = pd.DataFrame({
+                'Metric': [
+                    'Word Count',
+                    'Character Count',
+                    'Emphasis Score',
+                    'Sentiment Polarity',
+                    'Sentiment Subjectivity',
+                    'Final Score'
+                ],
+                'Value': [
+                    result['features']['word_count'],
+                    result['features']['char_count'],
+                    f"{result['emphasis_score']:.3f}",
+                    f"{result['sentiment_polarity']:.3f}",
+                    f"{result['sentiment_subjectivity']:.3f}",
+                    f"{result['sentiment_aware_score']:.3f}"
+                ]
+            })
+            st.dataframe(stats_df, use_container_width=True, hide_index=True)
+        
+        # Action Recommendation
+        st.markdown("### Recommended Action")
+        
+        if result['risk_level_final'] == 'High':
+            st.error("""
+            URGENT - Immediate Action Required
+            - Assign to priority queue
+            - Response target: 24 hours
+            - Escalate to management
+            - Flag for legal review if needed
+            """)
+        elif result['risk_level_final'] == 'Medium':
+            st.warning("""
+            Priority Handling
+            - Assign to experienced agent
+            - Response target: 48-72 hours
+            - Monitor for escalation
+            """)
+        else:
+            st.info("""
+            Standard Processing
+            - Route to standard queue
+            - Response target: 5-7 business days
+            - Standard procedures apply
+            """)
+        
+        # Save to database
+        st.markdown("---")
+        
+        if st.session_state.show_save_button:
+            save_col1, save_col2 = st.columns([3, 1])
+            
+            with save_col1:
+                st.markdown("**Save this complaint to database?**")
+            
+            with save_col2:
+                if st.button("Save to Database", use_container_width=True, type="primary"):
+                    metadata = st.session_state.metadata
+                    
+                    print(f"Risk Level: {result['risk_level_final']}")
+                    print(f"Metadata: {metadata}")
+                    
+                    # Save
+                    complaint_id = db.save_complaint(result, metadata)
+                    
+                    if complaint_id:
                         st.success(f"Saved! Complaint ID: {complaint_id}")
+                        st.balloons()
+                        
+                        # Clear the save button
+                        st.session_state.show_save_button = False
+                        
+                        # Force refresh to update sidebar and Tab 2
+                        import time
+                        time.sleep(0.5)
                         st.rerun()
+                    else:
+                        st.error("Error saving to database. Check console for details.")
+
 
 # TAB 2: VIEW DATABASE
 with tab2:
