@@ -4,10 +4,10 @@
 
 **Team Members:**
 
-- Yanxin Li (261010919)
-- Yasmine Zhao (261268871)
-- Ellie Ha (261266871)
-- Maral Vahedi (261231293)
+- Ellie Ha
+- Yanxin Li
+- Yasmine Zhao
+- Maral Vahedi
 
 **Date:** January 23, 2026
 
