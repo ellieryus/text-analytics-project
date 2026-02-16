@@ -258,16 +258,6 @@ text_analytics_project/
 
 ---
 
-## Team Workflow
-
-1. **Weekly Meetings:** Review progress, address blockers
-2. **Jupyter Notebooks:** Primary analysis tool
-3. **Code Review:** Peer review before merging
-4. **Documentation:** Update as you go
-5. **Testing:** Validate functions before integration
-
----
-
 ## Glossary
 
 - **TF-IDF:** Term Frequency-Inverse Document Frequency
